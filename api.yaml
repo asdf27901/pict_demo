@@ -2,8 +2,8 @@
     wx-app: &wx_host https://api.chali.tech
     wx-code: 001Gzr0w3KeKnZ2Er53w3mrXTd3Gzr0n
     backend: &backend_host https://api-backend.chali.tech/xct
-    username: lmj
-    password: lmj123456@
+    username: xxx
+    password: xxx
 
 # https://api.chali.tech  测试环境小程序域名
 # https://api-backend.chali.tech/xct  测试环境后台域名

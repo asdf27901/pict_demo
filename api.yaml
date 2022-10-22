@@ -50,17 +50,17 @@
 #    optional:
 #
 - host: *backend_host
-  address: /user/login
+  address: /gift/info
   name: 配置查询
-  method: post
+  method: get
   headers:
     Content-Type: application/json;charset=UTF-8
     Connection: keep-alive
+    x-token:
   params:
     query:
+      id: 正确:3/错误:0/空值:null
     body:
-      username: 正确:lmj/错误:lmx/空值:null
-      password: 正确:lmj123456@/错误:lmj/空值:null
 
 
 

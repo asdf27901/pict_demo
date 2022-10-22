@@ -10,12 +10,14 @@ from time import sleep
 from allpairspy import AllPairs
 from collections import OrderedDict
 from copy import deepcopy
+from cacheout import Cache
 
 
 class PairsData(object):
 
     def __init__(self):
         self.data = self.__get_yaml()
+        self.cache = Cache(maxsize=256)
 
     def __get_yaml(self):
         stream = open(file='./api.yaml', mode='r', encoding='utf8')
@@ -85,15 +87,20 @@ class PairsData(object):
                 except TypeError:
                     pass
 
-                for j in d[i].split('/'):
-                    try:
-                        params_pairs[i].append({"info": j.split(':', 1)[0],
-                                                "value": None if j.split(':', 1)[1] == 'null' else j.split(':', 1)[1],
-                                                "key": i})
-                    except IndexError:
-                        params_pairs[i].append({"info": '正确',
-                                                "value": j,
-                                                "key": i})
+                try:
+                    for j in d[i].split('/'):
+                        try:
+                            params_pairs[i].append({"info": j.split(':', 1)[0],
+                                                    "value": None if j.split(':', 1)[1] == 'null' else j.split(':', 1)[1],
+                                                    "key": i})
+                        except IndexError:
+                            params_pairs[i].append({"info": '正确',
+                                                    "value": j,
+                                                    "key": i})
+                except AttributeError:
+                    params_pairs[i].append({"info": '正确',
+                                            "value": d[i],
+                                            "key": i})
 
     def __check_params_num(self, d):
 
@@ -213,7 +220,7 @@ class PairsData(object):
     def check_auth(self, d: dict):
         for i in d.keys():
             if i == 'token':
-                if d[i] is None:
+                if d[i] is None and self.cache.get('token') is None:
                     response = requests.post(url=self.wx_app_host + '/xct/auth/customerLoginByWeixin',
                                              json={'data': {'code': self.wx_code}},
                                              headers={'Content-Type': 'application/json;charset=UTF-8'})
@@ -222,14 +229,18 @@ class PairsData(object):
 
                     try:
                         d[i] = response.json()['data']['token']
+                        self.cache.set('token', d[i])
                     except TypeError:
                         print("小程序code失效请重新输入")
                         sys.exit(0)
 
+                else:
+                    d[i] = self.cache.get('token')
+
                 return True
 
             if i == 'x-token':
-                if d[i] is None:
+                if d[i] is None and self.cache.get('x-token') is None:
                     response = requests.post(url=self.backend_host + '/user/login',
                                              json={'username': self.username, 'password': self.password},
                                              headers={'Content-Type': 'application/json;charset=UTF-8'})
@@ -238,8 +249,11 @@ class PairsData(object):
 
                     try:
                         d[i] = response.json()['data']['token']
+                        self.cache.set('x-token', d[i])
                     except TypeError:
                         print("后台用户名密码有误，请修改配置文件")
+                else:
+                    d[i] = self.cache.get('x-token')
 
                 return True
 
@@ -264,15 +278,18 @@ if __name__ == '__main__':
             req_params['url'] = data['host'] + data['address']
             req_params['method'] = data['method']
             pairs.check_auth(req_params)
-            print("正在测试=========>{url}\n{info}".format(url=req_params['url'], info=info))
-            print("请求参数===============>\n{}".format(req_params))
             response = requests.request(**req_params)
+            print("正在测试=========>{url}\n{info}".format(url=response.url, info=info))
+            print("请求头===============>\n\033[0;32m{headers}\033[0m".format(headers=response.request.headers))
+            print("请求体===============>\n\033[0;32m{body}\033[0m".format(body=response.request.body))
             if response.status_code != 200:
                 print('\033[0;31m状态码都不是200，还测个啥？？？？赶紧打开bilibili学习啦\033[0m')
                 print('状态码为\033[0;31m{code}\033[0m'.format(code=response.status_code))
                 print('返回数据为\033[0;31m{data}\033[0m'.format(data=response.text))
             else:
                 print('状态码为\033[0;32m{code}\033[0m'.format(code=response.status_code))
-                print('返回数据为\033[0;32m{data}\033[0m'.format(data=response.text))
+                print('返回数据为===============>\n\033[0;32m{data}\033[0m'.format(data=response.text))
             print("===================分割线===================\n")
             sleep(1)
+
+    pairs.cache.clear()

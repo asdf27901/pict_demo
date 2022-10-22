@@ -1,0 +1,67 @@
+- env:
+    wx-app: &wx_host https://api.chali.tech
+    wx-code: 001Gzr0w3KeKnZ2Er53w3mrXTd3Gzr0n
+    backend: &backend_host https://api-backend.chali.tech/xct
+    username: lmj
+    password: lmj123456@
+
+# https://api.chali.tech  测试环境小程序域名
+# https://api-backend.chali.tech/xct  测试环境后台域名
+# https://api-pre.xiaochatai.com  预发布环境小程序域名
+# https://api-back-pre.xiaochatai.com  预发布环境后台域名
+
+  # json格式
+#  host: *backend_host
+#    address: /user/login
+#    name: 后台登陆
+#    method: post
+#    params:
+#      query:
+#      body:
+#        username: '正确:lmj'
+#        password: '正确:lmj123456@'
+#      optional: test
+
+  # form-data格式
+#  host: *backend_host
+#    address: /user/login
+#    name: 后台登陆
+#    method: post
+#    params:
+#      query:
+#      data:
+#        username: '正确:lmj'
+#        password: '正确:lmj123456@'
+#      optional: test
+
+
+#- host: *backend_host
+#  address: /user/login
+#  name: 后台登陆
+#  method: post
+#  headers:
+#    Content-Type: application/json;charset=UTF-8
+#    Connection: keep-alive
+#  params:
+#    query:
+#    body:
+#      username: 正确:lmj/错误:lmjx
+#      password: 正确:lmj123456@/错误:ldw
+#    optional:
+#
+- host: *backend_host
+  address: /user/login
+  name: 配置查询
+  method: post
+  headers:
+    Content-Type: application/json;charset=UTF-8
+    Connection: keep-alive
+  params:
+    query:
+    body:
+      username: 正确:lmj/错误:lmx/空值:null
+      password: 正确:lmj123456@/错误:lmj/空值:null
+
+
+
+

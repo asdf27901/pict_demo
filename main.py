@@ -252,6 +252,7 @@ class PairsData(object):
                         self.cache.set('x-token', d[i])
                     except TypeError:
                         print("后台用户名密码有误，请修改配置文件")
+                        sys.exit(1)
                 else:
                     d[i] = self.cache.get('x-token')
 
@@ -279,7 +280,9 @@ if __name__ == '__main__':
             req_params['method'] = data['method']
             pairs.check_auth(req_params)
             response = requests.request(**req_params)
-            print("正在测试=========>{url}\n{info}".format(url=response.url, info=info))
+            print("正在测试\033[0;31m{name}\033[0m".format(name=data['name']))
+            print('请求地址================>{url}'.format(url=response.url))
+            print('测试条件===========>\n{info}'.format(info=info))
             print("请求头===============>\n\033[0;32m{headers}\033[0m".format(headers=response.request.headers))
             print("请求体===============>\n\033[0;32m{body}\033[0m".format(body=response.request.body))
             if response.status_code != 200:

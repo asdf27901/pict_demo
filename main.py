@@ -78,7 +78,7 @@ class PairsData(object):
                                                         "value": k.split(','),
                                                         "key": i})
 
-            elif d[i]:
+            elif d[i] is not None:
                 params_pairs[i] = []
                 try:
                     if i in optional:
@@ -188,13 +188,13 @@ class PairsData(object):
                             else:
                                 json[i][elem_index] = data[i]
                         else:
-                            json[i] = ''
+                            json[i] = None
 
             else:
                 if i in data.keys():
                     json[i] = data[i]
                 else:
-                    json[i] = ''
+                    json[i] = None
 
     def get_request_json(self, d: dict, pairs_dict: dict):
         request_dict = {}
@@ -230,7 +230,7 @@ class PairsData(object):
                     try:
                         d[i] = response.json()['data']['token']
                         self.cache.set('token', d[i])
-                    except TypeError:
+                    except KeyError:
                         print("小程序code失效请重新输入")
                         sys.exit(0)
 

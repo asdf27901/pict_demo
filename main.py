@@ -6,6 +6,7 @@
 import sys
 import yaml
 import requests
+import chardet
 from time import sleep
 from allpairspy import AllPairs
 from collections import OrderedDict
@@ -285,7 +286,7 @@ if __name__ == '__main__':
             print('请求地址================>{url}'.format(url=response.url))
             print('测试条件===========>\n{info}'.format(info=info))
             print("请求头===============>\n\033[0;32m{headers}\033[0m".format(headers=response.request.headers))
-            print("请求体===============>\n\033[0;32m{body}\033[0m".format(body=response.request.body))
+            print("请求体===============>\n\033[0;32m{body}\033[0m".format(body=response.request.body.decode('unicode-escape')))
             if response.status_code != 200:
                 print('\033[0;31m状态码都不是200，还测个啥？？？？赶紧打开bilibili学习啦\033[0m')
                 print('状态码为\033[0;31m{code}\033[0m'.format(code=response.status_code))

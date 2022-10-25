@@ -109,7 +109,8 @@ class PairsData(object):
 
         else:
             index = 0
-            for _ in d.values():
+            key = list(d.keys())[0]
+            for _ in d[key]:
                 index += 1
                 if index > 1:
                     return True

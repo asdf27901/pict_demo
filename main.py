@@ -92,7 +92,8 @@ class PairsData(object):
                     for j in d[i].split('/'):
                         try:
                             params_pairs[i].append({"info": j.split(':', 1)[0],
-                                                    "value": None if j.split(':', 1)[1] == 'null' else j.split(':', 1)[1],
+                                                    "value": None if j.split(':', 1)[1] == 'null' else j.split(':', 1)[
+                                                        1],
                                                     "key": i})
                         except IndexError:
                             params_pairs[i].append({"info": '正确',
@@ -185,7 +186,7 @@ class PairsData(object):
                     else:
                         if i in data.keys():
                             elem_index = json[i].index(j)
-                            if elem_index == len(json[i])-1:
+                            if elem_index == len(json[i]) - 1:
                                 json[i] = data[i]
                             else:
                                 json[i][elem_index] = data[i]
@@ -268,33 +269,37 @@ class PairsData(object):
 if __name__ == '__main__':
 
     pairs = PairsData()
+    print("请输入你要测试的接口名：")
+    request_list = input().split('，')
     for data in pairs.data:
+        if data['name'] in request_list:
 
-        all_pairs_list = pairs.get_request_pairs(data['params'])
+            all_pairs_list = pairs.get_request_pairs(data['params'])
 
-        for one_pairs in all_pairs_list:
-            req_model = deepcopy(data['params'])
-            info = one_pairs['info']
-            one_pairs.pop('info')
-            req_params = pairs.get_request_json(req_model, one_pairs)
-            req_params['headers'] = data['headers']
-            req_params['url'] = data['host'] + data['address']
-            req_params['method'] = data['method']
-            pairs.check_auth(req_params)
-            response = requests.request(**req_params)
-            print("正在测试\033[0;31m{name}\033[0m".format(name=data['name']))
-            print('请求地址================>{url}'.format(url=response.url))
-            print('测试条件===========>\n{info}'.format(info=info))
-            print("请求头===============>\n\033[0;32m{headers}\033[0m".format(headers=response.request.headers))
-            print("请求体===============>\n\033[0;32m{body}\033[0m".format(body=response.request.body.decode('unicode-escape')))
-            if response.status_code != 200:
-                print('\033[0;31m状态码都不是200，还测个啥？？？？赶紧打开bilibili学习啦\033[0m')
-                print('状态码为\033[0;31m{code}\033[0m'.format(code=response.status_code))
-                print('返回数据为\033[0;31m{data}\033[0m'.format(data=response.text))
-            else:
-                print('状态码为\033[0;32m{code}\033[0m'.format(code=response.status_code))
-                print('返回数据为===============>\n\033[0;32m{data}\033[0m'.format(data=response.text))
-            print("===================分割线===================\n")
-            sleep(1)
+            for one_pairs in all_pairs_list:
+                req_model = deepcopy(data['params'])
+                info = one_pairs['info']
+                one_pairs.pop('info')
+                req_params = pairs.get_request_json(req_model, one_pairs)
+                req_params['headers'] = data['headers']
+                req_params['url'] = data['host'] + data['address']
+                req_params['method'] = data['method']
+                pairs.check_auth(req_params)
+                response = requests.request(**req_params)
+                print("正在测试\033[0;31m{name}\033[0m".format(name=data['name']))
+                print('请求地址================>{url}'.format(url=response.url))
+                print('测试条件===========>\n{info}'.format(info=info))
+                print("请求头===============>\n\033[0;32m{headers}\033[0m".format(headers=response.request.headers))
+                print("请求体===============>\n\033[0;32m{body}\033[0m".format(
+                    body=response.request.body.decode('unicode-escape')))
+                if response.status_code != 200:
+                    print('\033[0;31m状态码都不是200，还测个啥？？？？赶紧打开bilibili学习啦\033[0m')
+                    print('状态码为\033[0;31m{code}\033[0m'.format(code=response.status_code))
+                    print('返回数据为\033[0;31m{data}\033[0m'.format(data=response.text))
+                else:
+                    print('状态码为\033[0;32m{code}\033[0m'.format(code=response.status_code))
+                    print('返回数据为===============>\n\033[0;32m{data}\033[0m'.format(data=response.text))
+                print("===================分割线===================\n")
+                sleep(1)
 
     pairs.cache.clear()

@@ -6,7 +6,6 @@
 import sys
 import yaml
 import requests
-import chardet
 from time import sleep
 from allpairspy import AllPairs
 from collections import OrderedDict
@@ -28,6 +27,8 @@ class PairsData(object):
         self.backend_host = self.data[0]['env']['backend']
         self.username = self.data[0]['env']['username']
         self.password = self.data[0]['env']['password']
+        self.username_no_permissions = self.data[0]['env']['username-no-permissions']
+        self.password_no_permissions = self.data[0]['env']['password-no-permissions']
         self.data.remove(self.data[0])
 
         return self.data
@@ -92,8 +93,8 @@ class PairsData(object):
                     for j in d[i].split('/'):
                         try:
                             params_pairs[i].append({"info": j.split(':', 1)[0],
-                                                    "value": None if j.split(':', 1)[1] == 'null' else j.split(':', 1)[
-                                                        1],
+                                                    "value": None if j.split(':', 1)[1] == 'null'
+                                                    else j.split(':', 1)[1],
                                                     "key": i})
                         except IndexError:
                             params_pairs[i].append({"info": '正确',
@@ -220,49 +221,90 @@ class PairsData(object):
 
         return request_dict
 
-    def check_auth(self, d: dict):
+    def __login_backend(self, username: str, password: str, permissions: bool):
+
+        __login_backend_response = requests.post(url=self.backend_host + '/user/login',
+                                                 json={'username': username, 'password': password},
+                                                 headers={'Content-Type': 'application/json;charset=UTF-8'})
+
+        if __login_backend_response.status_code == 502:
+            raise Exception("后台服务正在重启，无法拿到token")
+
+        try:
+            if permissions:
+                self.cache.set('x-token', __login_backend_response.json()['data']['token'])
+            else:
+                self.cache.set('x-token-no-permissions', __login_backend_response.json()['data']['token'])
+        except TypeError:
+            print("后台用户名密码有误，请修改配置文件")
+            sys.exit(1)
+
+    def __login_wxapp(self):
+        __login_wxapp_response = requests.post(url=self.wx_app_host + '/xct/auth/customerLoginByWeixin',
+                                               json={'data': {'code': self.code}},
+                                               headers={'Content-Type': 'application/json;charset=UTF-8'})
+        if __login_wxapp_response.status_code == 502:
+            raise Exception("小程序服务正在重启，无法拿到token")
+
+        try:
+            self.cache.set('token', __login_wxapp_response.json()['data']['token'])
+        except KeyError:
+            print("小程序code失效请重新输入")
+            sys.exit(1)
+
+    def check_auth(self, d: dict, permissions: bool = True):
         for i in d.keys():
             if i == 'token':
-                if d[i] is None and self.cache.get('token') is None:
-                    response = requests.post(url=self.wx_app_host + '/xct/auth/customerLoginByWeixin',
-                                             json={'data': {'code': self.wx_code}},
-                                             headers={'Content-Type': 'application/json;charset=UTF-8'})
-                    if response.status_code == 502:
-                        raise Exception("后台服务正在重启，无法拿到token")
-
-                    try:
-                        d[i] = response.json()['data']['token']
-                        self.cache.set('token', d[i])
-                    except KeyError:
-                        print("小程序code失效请重新输入")
-                        sys.exit(0)
-
-                else:
-                    d[i] = self.cache.get('token')
+                if self.cache.get('token') is None:
+                    self.__login_wxapp()
+                d[i] = self.cache.get('token')
 
                 return True
 
             if i == 'x-token':
-                if d[i] is None and self.cache.get('x-token') is None:
-                    response = requests.post(url=self.backend_host + '/user/login',
-                                             json={'username': self.username, 'password': self.password},
-                                             headers={'Content-Type': 'application/json;charset=UTF-8'})
-                    if response.status_code == 502:
-                        raise Exception("后台服务正在重启，无法拿到token")
-
-                    try:
-                        d[i] = response.json()['data']['token']
-                        self.cache.set('x-token', d[i])
-                    except TypeError:
-                        print("后台用户名密码有误，请修改配置文件")
-                        sys.exit(1)
-                else:
+                if permissions:
+                    if self.cache.get('x-token') is None:
+                        self.__login_backend(self.username, self.password, permissions)
                     d[i] = self.cache.get('x-token')
+                else:
+                    if self.cache.get('x-token-no-permissions') is None:
+                        self.__login_backend(self.username_no_permissions, self.password_no_permissions, permissions)
+                    d[i] = self.cache.get('x-token-no-permissions')
 
                 return True
 
             elif isinstance(d[i], dict):
-                if self.check_auth(d[i]):
+                if self.check_auth(d[i], permissions):
+                    return
+
+    def __call__(self, *args):
+        # TODO
+        pass
+
+    def set_auth_error_pair_dict(self, d: dict, pairs_list: list):
+        for i in d.keys():
+            if i == 'x-token':
+                pairs_list.append({'info': '\033[0;31mx-token失效/无效\033[0m'})
+                pairs_list.append({'info': '\033[0;31m无权限\033[0m'})
+                return True
+
+            elif i == 'token':
+                pairs_list.append({'info': '\033[0;31mtoken失效/无效\033[0m'})
+                pairs_list.append({'info': '\033[0;31m无权限\033[0m'})
+                return True
+
+            elif isinstance(d[i], dict):
+                if self.set_auth_error_pair_dict(d[i], pairs_list):
+                    return
+
+    def set_auth_invalid(self, d: dict):
+        for i in d.keys():
+            if i == 'x-token' or i == 'token':
+                d[i] = 'xxx'
+                return True
+
+            elif isinstance(d[i], dict):
+                if self.set_auth_invalid(d[i]):
                     return
 
 
@@ -275,23 +317,35 @@ if __name__ == '__main__':
         if data['name'] in request_list:
 
             all_pairs_list = pairs.get_request_pairs(data['params'])
+            pairs.set_auth_error_pair_dict(data, all_pairs_list)
 
             for one_pairs in all_pairs_list:
                 req_model = deepcopy(data['params'])
-                info = one_pairs['info']
-                one_pairs.pop('info')
+                info = one_pairs.pop('info')
                 req_params = pairs.get_request_json(req_model, one_pairs)
                 req_params['headers'] = data['headers']
                 req_params['url'] = data['host'] + data['address']
                 req_params['method'] = data['method']
-                pairs.check_auth(req_params)
+
+                if info.__contains__('无权限'):
+                    pairs.check_auth(req_params, False)
+
+                elif info.__contains__('失效/无效'):
+                    pairs.set_auth_invalid(req_params)
+
+                else:
+                    pairs.check_auth(req_params, True)
+
                 response = requests.request(**req_params)
                 print("正在测试\033[0;31m{name}\033[0m".format(name=data['name']))
                 print('请求地址================>{url}'.format(url=response.url))
                 print('测试条件===========>\n{info}'.format(info=info))
                 print("请求头===============>\n\033[0;32m{headers}\033[0m".format(headers=response.request.headers))
-                print("请求体===============>\n\033[0;32m{body}\033[0m".format(
-                    body=response.request.body.decode('unicode-escape')))
+                try:
+                    print("请求体===============>\n\033[0;32m{body}\033[0m".format(
+                        body=response.request.body.decode('unicode-escape')))
+                except AttributeError:
+                    print("\033[0;31m无请求体\033[0m")
                 if response.status_code != 200:
                     print('\033[0;31m状态码都不是200，还测个啥？？？？赶紧打开bilibili学习啦\033[0m')
                     print('状态码为\033[0;31m{code}\033[0m'.format(code=response.status_code))

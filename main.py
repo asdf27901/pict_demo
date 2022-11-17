@@ -354,6 +354,12 @@ if __name__ == '__main__':
                     print('返回数据为\033[0;31m{data}\033[0m'.format(data=response.text))
                 else:
                     print('状态码为\033[0;32m{code}\033[0m'.format(code=response.status_code))
+                    print(
+                        '响应时间为:{time}'.format(
+                            time='\033[0;31m' + str(int(response.elapsed.total_seconds() * 1000)) + 'ms\033[0m'
+                            if response.elapsed.total_seconds() > 0.2
+                            else '\033[0;32m' + str(int(response.elapsed.total_seconds() * 1000)) + 'ms\033[0m')
+                    )
                     print('返回数据为===============>\n\033[0;32m{data}\033[0m'.format(data=response.text))
                 print("===================分割线===================\n")
                 sleep(1)

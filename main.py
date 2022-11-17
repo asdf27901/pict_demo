@@ -111,14 +111,15 @@ class PairsData(object):
             return True
 
         else:
-            index = 0
-            key = list(d.keys())[0]
-            for _ in d[key]:
-                index += 1
-                if index > 1:
-                    return True
+            # index = 0
+            keys = list(d.keys())
+            # for _ in d[key]:
+            #     index += 1
+            if len(keys) > 1:
+                return True
+            return False
 
-        return False
+        # return False
 
     def get_request_pairs(self, d: dict):
         data = []

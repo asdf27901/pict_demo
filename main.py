@@ -284,6 +284,8 @@ class PairsData(object):
     def set_auth_error_pair_dict(self, d: dict, pairs_list: list):
         for i in d.keys():
             if i == 'x-token':
+                if not pairs_list:
+                    pairs_list.append({'info': '\033[0;31mx-token正确\033[0m'})
                 pairs_list.append({'info': '\033[0;31mx-token失效/无效\033[0m'})
                 pairs_list.append({'info': '\033[0;31m无权限\033[0m'})
                 return True

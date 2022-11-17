@@ -117,7 +117,10 @@ class PairsData(object):
             #     index += 1
             if len(keys) > 1:
                 return True
-            return False
+            elif len(keys) == 1:
+                if len(d[keys[0]]) > 1:
+                    return True
+                return False
 
         # return False
 

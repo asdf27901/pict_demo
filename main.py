@@ -118,7 +118,7 @@ class PairsData(object):
             if len(keys) > 1:
                 return True
             elif len(keys) == 1:
-                if len(d[keys[0]]) > 1:
+                if not isinstance(d[keys[0]], str) and len(d[keys[0]]) > 1:
                     return True
                 return False
 
